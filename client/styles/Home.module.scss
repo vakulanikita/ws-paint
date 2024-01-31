@@ -5,19 +5,21 @@
   max-height: 100vh;
   width: 100vw;
   background-color: $background-color;
-  padding: 0 16px;
-
+  
   .title {
     font-size: 2rem;
+    padding: 0 16px;
   }
 
   .subtitle {
     font-size: 1.2rem;
     margin-bottom: 20px;
+    padding: 0 16px;
   }
 
   .btn {
     padding: 10px 20px;
     text-transform: uppercase;
+    padding: 0 16px;
   }
 }
