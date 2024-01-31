@@ -1,0 +1,23 @@
+@import "./variables";
+
+
+.canvas {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  .userForm {
+    margin-bottom: 30px;
+  }
+
+  canvas {
+    border: 1px solid black;
+    background-color: white;
+
+    &.blur {
+      filter: blur(2px);
+    }
+  }
+}
