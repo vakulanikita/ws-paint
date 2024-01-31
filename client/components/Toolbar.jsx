@@ -28,7 +28,7 @@ const Toolbar = () => {
   }
 
   React.useEffect(() => {
-    console.log(toolState);
+    // console.log(toolState);
   }, [toolState])
 
   return (

@@ -1,34 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 import s from "@/styles/Canvas.module.scss"
 import { observer } from "mobx-react-lite";
+import clsx from 'clsx';
 import canvasState from "../store/canvasState";
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
-import { Modal, Button } from "react-bootstrap";
 import Rect from "../tools/Rect";
 import axios from 'axios'
-import { useRouter } from 'next/router';
-import clsx from 'clsx';
 
-const Canvas = observer(() => {
+const Canvas = observer(({
+  canvasId
+}) => {
   const canvasRef = useRef()
   const usernameRef = useRef()
-  const [modal, setModal] = useState(true)
-  // const params = useParams()
-  // const router = useRouter()
-  // console.log(router2);
 
-  const router = {
-    query: {
-      id: 'f1768a93c14e'
-    }
-  }
-
-  useEffect(() => {
+  // получение холста с бэкенда
+  React.useEffect(() => {
     // console.log(router);
     canvasState.setCanvas(canvasRef.current)
     let ctx = canvasRef.current.getContext('2d')
-    axios.get(`http://localhost:5000/image?id=${router.query.id}`)
+    axios.get(`http://localhost:5000/image?id=${canvasId}`)
       .then(response => {
         const img = new Image()
         img.src = response.data
@@ -36,19 +27,31 @@ const Canvas = observer(() => {
           ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
           ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height)
         }
+      }).catch(err => {
+        console.log(err);
+
+        // холста нет в БД. создаем
+        if (err.response.status === 500) {
+          axios.post(
+            `http://localhost:5000/image?id=${canvasId}`,
+            {
+              img: canvasRef.current.toDataURL()
+            }
+          )
+        }
       })
   }, [])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (canvasState.username) {
       const socket = new WebSocket(`ws://localhost:5000/`);
       canvasState.setSocket(socket)
-      canvasState.setSessionId(router.query.id)
-      toolState.setTool(new Brush(canvasRef.current, socket, router.query.id))
+      canvasState.setSessionId(canvasId)
+      toolState.setTool(new Brush(canvasRef.current, socket, canvasId))
       socket.onopen = () => {
         console.log('Подключение установлено')
         socket.send(JSON.stringify({
-          id: router.query.id,
+          id: canvasId,
           username: canvasState.username,
           method: "connection"
         }))
@@ -83,48 +86,41 @@ const Canvas = observer(() => {
     }
   }
 
-
   const mouseDownHandler = () => {
     if (!canvasState.username) return
 
     canvasState.pushToUndo(canvasRef.current.toDataURL())
-    axios.post(`http://localhost:5000/image?id=${router.query.id}`, { img: canvasRef.current.toDataURL() })
+    axios.post(
+      `http://localhost:5000/image?id=${canvasId}`,
+      {
+        img: canvasRef.current.toDataURL()
+      }
+    )
       .then(response => console.log(response.data))
+      .catch(err => {
+        console.log(err);
+      })
   }
 
-  const connectHandler = () => {
+  const setUser = () => {
     canvasState.setUsername(usernameRef.current.value)
-    setModal(false)
   }
 
   return (
     <div className={s.canvas}>
-      {modal ? <div className={s.userForm}>
-        <div>Введите ваше имя</div>
+      {!canvasState.username ? <div className={s.userForm}>
+        <div>Чтобы подключиться, введите ваш позывной:</div>
         <input type="text" ref={usernameRef} />
-        <button onClick={() => connectHandler()}>
+        <button onClick={() => setUser()}>
           Войти
         </button>
-        {/* <Modal show={modal} onHide={() => { }}>
-          <Modal.Header >
-            <Modal.Title>Введите ваше имя</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <input type="text" ref={usernameRef} />
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => connectHandler()}>
-              Войти
-            </Button>
-          </Modal.Footer>
-        </Modal> */}
       </div>
         : null
       }
       <canvas
         ref={canvasRef}
         className={clsx(!canvasState.username && s.blur)}
-        onMouseDown={() => mouseDownHandler()}
+        onMouseUp={() => mouseDownHandler()}
         width={600}
         height={400}
       />

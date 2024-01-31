@@ -5,7 +5,9 @@ import SettingBar from "@/components/SettingBar";
 import Canvas from "@/components/Canvas";
 import s from '@/styles/Home.module.scss'
 
-export default function Home() {
+export default function Home({
+  id
+}) {
   return (
     <>
       <Head>
@@ -17,8 +19,18 @@ export default function Home() {
       <main className={s.app}>
         <Toolbar />
         <SettingBar />
-        <Canvas />
+        <Canvas canvasId={id} />
       </main>
     </>
   );
+}
+
+// @ts-ignore
+export const getServerSideProps = async ({ req, res, params, locale, locales, query, resolvedUrl }) => {
+
+  return {
+    props: {
+      id: params.id
+    },
+  };
 }
